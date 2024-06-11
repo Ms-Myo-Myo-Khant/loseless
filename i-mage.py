@@ -32,6 +32,35 @@ loading.place(x=20, y=350)
 image_a = ImageTk.PhotoImage((Image.open("Image/c1.png")), size=(10, 10))
 image_b = ImageTk.PhotoImage((Image.open("Image/c2.png")), size=(10, 10))
 
+# for i in range(2):
+#     i1=Label(bg,text="",image=image_a,bg="#181818").place(x=240,y=200)
+#     i2 =Label(bg, text="", image=image_b,bg="#181818").place(x=270, y=200)
+#     i3 = Label(bg, text="", image=image_b,bg="#181818").place(x=300, y=200)
+#     i4 = Label(bg, text="", image=image_b,bg="#181818").place(x=330, y=200)
+#     root.update_idletasks()
+#     time.sleep(0.5)
+#
+#     i1 = Label(bg, text="", image=image_b, bg="#181818").place(x=240, y=200)
+#     i2 = Label(bg, text="", image=image_a, bg="#181818").place(x=270, y=200)
+#     i3 = Label(bg, text="", image=image_b, bg="#181818").place(x=300, y=200)
+#     i4 = Label(bg, text="", image=image_b, bg="#181818").place(x=330, y=200)
+#     root.update_idletasks()
+#     time.sleep(0.5)
+#
+#     i1 = Label(bg, text="", image=image_b, bg="#181818").place(x=240, y=200)
+#     i2 = Label(bg, text="", image=image_b, bg="#181818").place(x=270, y=200)
+#     i3 = Label(bg, text="", image=image_a, bg="#181818").place(x=300, y=200)
+#     i4 = Label(bg, text="", image=image_b, bg="#181818").place(x=330, y=200)
+#     root.update_idletasks()
+#     time.sleep(0.5)
+#
+#     i1 = Label(bg, text="", image=image_b, bg="#181818").place(x=240, y=200)
+#     i2 = Label(bg, text="", image=image_b, bg="#181818").place(x=270, y=200)
+#     i3 = Label(bg, text="", image=image_b, bg="#181818").place(x=300, y=200)
+#     i4 = Label(bg, text="", image=image_a, bg="#181818").place(x=330, y=200)
+#     root.update_idletasks()
+#     time.sleep(0.5)
+
 
 for i in range(2):
     i1 = Label(splash_root, text="", image=image_a,
@@ -111,7 +140,7 @@ def welcomeFrame():
     header.place(x=170, y=120)
 
     subHeader = CTkLabel(master=w_Frame,
-                         text=" A program to provide image compression \n for a wide range of users.",
+                         text=" A program to provide image compression\n for a wide range of images.",
                          font=("Poppins", 16), text_color="#ffffff")
 
     subHeader.place(x=80, y=184)
