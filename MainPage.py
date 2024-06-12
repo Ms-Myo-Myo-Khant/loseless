@@ -7,6 +7,9 @@ from PIL import Image, ImageTk
 import cv2
 import numpy as np
 from tkinter import filedialog
+import RunLength
+import huffman
+import threading
 
 # Declaring icons as public from the start
 uploadIcon = CTkImage(Image.open("Image/upload.png"), size=(30, 30))
@@ -90,10 +93,10 @@ def on_tab_click(sectionframes, sectionbuttons, currentFrame, currentbutton):
 
     else:
         # Generate Button for Image to Text
-        generate_Text_Button = CTkButton(currentFrame, text=" Compress", font=("Poppins", 20), border_width=0, corner_radius=32,
+        generate_RLE_Button = CTkButton(currentFrame, text=" Compress", font=("Poppins", 20), border_width=0, corner_radius=32,
                                             fg_color="#00BB6D", width=600, height=50, hover_color="null", command=lambda: generate_RLE(currentFrame, result_label, uploaded_image, resultText))
         
-        generate_Text_Button.place(x=460, y=630)
+        generate_RLE_Button.place(x=460, y=630)
         
     # Download Button
     download_Button = CTkButton(currentFrame, text="Download", font=("Poppins", 20), image=downloadIcon, compound="right",
@@ -104,16 +107,6 @@ def on_tab_click(sectionframes, sectionbuttons, currentFrame, currentbutton):
 
     
 def generate_huffman(currentFrame, result_label, uploaded_image, resultText):
-    print('huffman')
-def generate_RLE(currentFrame, result_label, uploaded_image, resultText):
-    print(rle)
-
-# Function for brightness, contrast,blur processing.
-
-def process_and_display_image(currentFrame, imgSetting, value, uploaded_image, result_label, resultText):
-
-    global after_image
-   
     # if user click generate button without uploading image, it will alert to choose image first.
     if uploaded_image is None:
         t = CTkToplevel(currentFrame)
@@ -136,59 +129,102 @@ def process_and_display_image(currentFrame, imgSetting, value, uploaded_image, r
         alertIcon = CTkLabel(t, image=icon, text="")
         alertIcon.place(x=180, y=18)
 
-        alertLabel1 = CTkLabel(t, text="Sorry! Can't Generate!", font=("Poppins", 22), text_color="#00BB6D",
+        alertLabel1 = CTkLabel(t, text="Sorry! Can't Compress!", font=("Poppins", 22), text_color="#00BB6D",
                                bg_color="transparent")
         alertLabel1.place(x=74, y=60)
         alertLabel2 = CTkLabel(t, text="Please choose your image first.", font=("Poppins", 16),
                                text_color="#777", bg_color="transparent")
         alertLabel2.place(x=80, y=100)
 
-        closeButton = CTkButton(t, text="Ok", fg_color="transparent", hover_color="null", font=("Poppins", 16), border_color="#00BB6D",
+        closeButton = CTkButton(t, text="Ok", fg_color="transparent", font=("Poppins", 16), hover_color="null", border_color="#00BB6D",
                                 border_width=1, command=t.destroy)
         closeButton.place(x=125, y=150)
         t.mainloop()
 
     else:
-
-        if imgSetting == "Brightness":
-            cvProcessed_image = cv2.convertScaleAbs(
-                uploaded_image, alpha=1, beta=value)
-
-        elif imgSetting == "Contrast":
-            cvProcessed_image = cv2.convertScaleAbs(
-                uploaded_image, alpha=value, beta=0)
-
-        elif imgSetting == "Blur":
-            cvProcessed_image = None
-            value = int(value)
-            if value > 2:
-                value = value*2+1
-                cvProcessed_image = cv2.GaussianBlur(
-                    uploaded_image, (value, value), 0)
-
-        # Storing the after image for download before changing into image object
-        after_image = cvProcessed_image
-
-        # Convert processed image to RGB for PIL
-        processed_rgb = cv2.cvtColor(cvProcessed_image, cv2.COLOR_BGR2RGB)
-        # Convert to a PIL Image object
-        processed_image_pil = Image.fromarray(processed_rgb)
-
-        # Resize image if necessary
-        max_size = 500
-        if max(processed_image_pil.size) > max_size:
-            processed_image_pil.thumbnail((max_size, max_size))
-
-        # Convert to a PhotoImage object
-        processed_image = ImageTk.PhotoImage(processed_image_pil)
-
+        cartoon_image = convert_to_cartoon(uploaded_image)
         # Update the result_label widget with the cartoon image
-        result_label.configure(image=processed_image)
-        result_label.image = processed_image
+        result_label.configure(image=cartoon_image)
+        result_label.image = cartoon_image
 
         # Destroy the resultText widget (optional)
         resultText.destroy()
 
+def show_loading_dialog(parent):
+    loading_dialog = CTkToplevel(parent)
+    loading_dialog.title("Processing")
+    loading_label = CTkLabel(loading_dialog, text="Processing, please wait...")
+    loading_label.pack(padx=20, pady=20)
+    loading_dialog.grab_set()
+    return loading_dialog
+
+def close_loading_dialog(dialog):
+    dialog.grab_release()
+    dialog.destroy()
+
+def process_rle(currentFrame, result_label, uploaded_image, resultText, loading_dialog):
+    try:
+        # Compress using RLE
+        compressed_image, original_size, compressed_size = RunLength.compress_RLE(uploaded_image)
+        
+        # Calculate compression ratio
+        compression_ratio = compressed_size / original_size
+
+        # Resize image if necessary
+        max_size = 500
+        if max(compressed_image.size) > max_size:
+            compressed_image.thumbnail((max_size, max_size))
+
+        # Convert the compressed image to a PhotoImage object
+        compressed_image_tk = ImageTk.PhotoImage(compressed_image)
+        
+        # Update the result_label widget with the compressed image
+        result_label.configure(image=compressed_image_tk)
+        result_label.image = compressed_image_tk
+
+        # Update the resultText with compression details
+        resultText.set(f"Original Size: {original_size} bytes\nCompressed Size: {compressed_size} bytes\nCompression Ratio: {compression_ratio:.2f}")
+    finally:
+        close_loading_dialog(loading_dialog)
+
+def generate_RLE(currentFrame, result_label, uploaded_image, resultText):
+    # if user click generate button without uploading image, it will alert to choose image first.
+    if uploaded_image is None:
+        t = CTkToplevel(currentFrame)
+        t.title("Alert")
+
+        t.iconbitmap("Image/favicon.ico")
+
+        t.configure(bg="#121212")
+        t.transient([currentFrame])
+
+        width = 380
+        height = 220
+        x = t.winfo_screenwidth() // 2 - width // 2
+        y = t.winfo_screenheight() // 2 - height // 2
+        t.geometry(f"{width}x{height}+{x + 120}+{y}")
+
+        t.resizable(width=False, height=False)
+
+        icon = CTkImage(Image.open("Image/sad.png"), size=(30, 30))
+        alertIcon = CTkLabel(t, image=icon, text="")
+        alertIcon.place(x=180, y=18)
+
+        alertLabel1 = CTkLabel(t, text="Sorry! Can't Compress!", font=("Poppins", 22), text_color="#00BB6D",
+                               bg_color="transparent")
+        alertLabel1.place(x=74, y=60)
+        alertLabel2 = CTkLabel(t, text="Please choose your image first.", font=("Poppins", 16),
+                               text_color="#777", bg_color="transparent")
+        alertLabel2.place(x=80, y=100)
+
+        closeButton = CTkButton(t, text="Ok", fg_color="transparent", font=("Poppins", 16), hover_color="null", border_color="#00BB6D",
+                                border_width=1, command=t.destroy)
+        closeButton.place(x=125, y=150)
+        t.mainloop()
+
+    else:
+        loading_dialog = show_loading_dialog(currentFrame)
+        threading.Thread(target=process_rle, args=(currentFrame, result_label, uploaded_image, resultText, loading_dialog)).start()
 
 
 
@@ -274,7 +310,7 @@ def addImage(image_label, addPhoto):
     global uploaded_image
 
     file_path = filedialog.askopenfilename(
-        filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png"), ("All files", "*.*")])
+        filetypes=[("All files", "*.*"),("JPEG files", "*.jpg"), ("PNG files", "*.png")])
     if file_path:
 
         uploaded_image = cv2.imread(file_path)
