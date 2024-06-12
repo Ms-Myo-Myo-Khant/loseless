@@ -58,16 +58,15 @@ def on_tab_click(sectionframes, sectionbuttons, currentFrame, currentbutton):
 
     '''Middle Section : Where main function work'''
 
-    # As 6 frames don't have same functionality, following if are to hide/show button,slider
-
     # Result Image Frame
-    resultFrame = CTkFrame(currentFrame, width=680, height=470,
+    resultFrame = CTkFrame(currentFrame, width=500, height=370,
                             bg_color="#121212", border_width=1, border_color="#00BB6D")
     resultFrame.place(x=800, y=120)
 
     # Result Image Label Frame
-    result_label = CTkLabel(resultFrame, text="", width=600, height=400)
+    result_label = CTkLabel(resultFrame, text="", width=250, height=300)
     result_label.place(x=38, y=32)
+
     after_image = None
     # creating before image upload frame
     create_before_image_frame(currentFrame, result_label)
@@ -75,26 +74,43 @@ def on_tab_click(sectionframes, sectionbuttons, currentFrame, currentbutton):
     # Middle Right Arrow Icon Creation
     arrow_label = CTkLabel(
         currentFrame, image=rightArrowIcon, text="", bg_color="transparent")
-    arrow_label.place(x=740, y=350)
+    arrow_label.place(x=745, y=300)
 
     # result text
     resultText = CTkLabel(result_label, text="Result  ", image=smileIcon, compound="right", font=("Poppins", 16),
                             text_color="#EDEADE")
-    resultText.place(x=270, y=200)
+    resultText.place(x=175, y=150)
 
+    textFrame = CTkFrame(currentFrame, width=900, height=70,
+                        border_width=1, border_color="#00BB6D")
+    textFrame.place(x=280, y=540)
+
+    originalSizeText = CTkLabel(currentFrame, text="Original Size:  ", compound="right", font=("Poppins", 16),
+                            text_color="#00BB6D")
+    originalSizeText.place(x=300, y=560)
+
+    compressedSizeText = CTkLabel(currentFrame, text="Compressed Size:  ", compound="right", font=("Poppins", 16),
+                            text_color="#00BB6D")
+    compressedSizeText.place(x=600, y=560)
+
+    compressedSizeRatio = CTkLabel(currentFrame, text="Compressed Ratio:  ", compound="right", font=("Poppins", 16),
+                            text_color="#00BB6D")
     
-        
+    compressedSizeRatio.place(x=900, y=560)
+
     if currentFrame == sectionframes[0]:
         
-        # Generate Button for Image to Cartoon
+        # Generate Button for Huffman
         generate_Huffman_Button = CTkButton(currentFrame, text=" Compress", font=("Poppins", 20), border_width=0, corner_radius=32,
-                                            fg_color="#00BB6D", width=600, height=50, hover_color="null", command=lambda: generate_huffman(currentFrame, result_label, uploaded_image, resultText))
+                                            fg_color="#00BB6D", width=600, height=50, hover_color="null", 
+                                            command=lambda: generate_huffman(currentFrame, result_label, uploaded_image, resultText,originalSizeText,compressedSizeText,compressedSizeRatio))
         generate_Huffman_Button.place(x=460, y=630)
 
     else:
-        # Generate Button for Image to Text
+        # Generate Button for RLE
         generate_RLE_Button = CTkButton(currentFrame, text=" Compress", font=("Poppins", 20), border_width=0, corner_radius=32,
-                                            fg_color="#00BB6D", width=600, height=50, hover_color="null", command=lambda: generate_RLE(currentFrame, result_label, uploaded_image, resultText))
+                                            fg_color="#00BB6D", width=600, height=50, hover_color="null", 
+                                            command=lambda: generate_RLE(currentFrame, result_label, uploaded_image, resultText,originalSizeText,compressedSizeText,compressedSizeRatio))
         
         generate_RLE_Button.place(x=460, y=630)
         
@@ -106,7 +122,7 @@ def on_tab_click(sectionframes, sectionbuttons, currentFrame, currentbutton):
     
 
     
-def generate_huffman(currentFrame, result_label, uploaded_image, resultText):
+def generate_huffman(currentFrame, result_label, uploaded_image, resultText,originalSizeText,compressedSizeText,compressedSizeRatio):
     # if user click generate button without uploading image, it will alert to choose image first.
     if uploaded_image is None:
         t = CTkToplevel(currentFrame)
@@ -150,44 +166,7 @@ def generate_huffman(currentFrame, result_label, uploaded_image, resultText):
         # Destroy the resultText widget (optional)
         resultText.destroy()
 
-def show_loading_dialog(parent):
-    loading_dialog = CTkToplevel(parent)
-    loading_dialog.title("Processing")
-    loading_label = CTkLabel(loading_dialog, text="Processing, please wait...")
-    loading_label.pack(padx=20, pady=20)
-    loading_dialog.grab_set()
-    return loading_dialog
-
-def close_loading_dialog(dialog):
-    dialog.grab_release()
-    dialog.destroy()
-
-def process_rle(currentFrame, result_label, uploaded_image, resultText, loading_dialog):
-    try:
-        # Compress using RLE
-        compressed_image, original_size, compressed_size = RunLength.compress_RLE(uploaded_image)
-        
-        # Calculate compression ratio
-        compression_ratio = compressed_size / original_size
-
-        # Resize image if necessary
-        max_size = 500
-        if max(compressed_image.size) > max_size:
-            compressed_image.thumbnail((max_size, max_size))
-
-        # Convert the compressed image to a PhotoImage object
-        compressed_image_tk = ImageTk.PhotoImage(compressed_image)
-        
-        # Update the result_label widget with the compressed image
-        result_label.configure(image=compressed_image_tk)
-        result_label.image = compressed_image_tk
-
-        # Update the resultText with compression details
-        resultText.set(f"Original Size: {original_size} bytes\nCompressed Size: {compressed_size} bytes\nCompression Ratio: {compression_ratio:.2f}")
-    finally:
-        close_loading_dialog(loading_dialog)
-
-def generate_RLE(currentFrame, result_label, uploaded_image, resultText):
+def generate_RLE(currentFrame, result_label, uploaded_image, resultText,originalSizeText,compressedSizeText,compressedSizeRatio):
     # if user click generate button without uploading image, it will alert to choose image first.
     if uploaded_image is None:
         t = CTkToplevel(currentFrame)
@@ -223,8 +202,30 @@ def generate_RLE(currentFrame, result_label, uploaded_image, resultText):
         t.mainloop()
 
     else:
-        loading_dialog = show_loading_dialog(currentFrame)
-        threading.Thread(target=process_rle, args=(currentFrame, result_label, uploaded_image, resultText, loading_dialog)).start()
+
+        after_image, original_size, compressed_size = RunLength.compress_RLE(uploaded_image)
+       
+        compression_ratio = compressed_size / original_size
+
+        # Resize image if necessary
+        max_size = 300
+        if max(after_image.size) > max_size:
+            after_image.thumbnail((max_size, max_size))
+
+        # Convert the compressed image to a PhotoImage object
+        compressed_image_tk = ImageTk.PhotoImage(after_image)
+        
+        # Update the result_label widget with the compressed image
+        result_label.configure(image=compressed_image_tk)
+        result_label.image = compressed_image_tk
+
+        # Update the resultText with compression details
+        resultText.destroy()
+        
+        originalSizeText.configure(text=f"Original Size: {original_size}")
+        compressedSizeText.configure(text=f"Compressed Size: {compressed_size}")
+        compressedSizeRatio.configure(text=f"Compression Ratio: {compression_ratio}")
+
 
 
 
@@ -322,18 +323,19 @@ def addImage(image_label, addPhoto):
         image_pil = Image.fromarray(rgbimage)
 
         # Resize image if necessary
-        max_size = 500
+        max_size = 300
         if max(image_pil.size) > max_size:
             image_pil.thumbnail((max_size, max_size))
 
         # Convert to a PhotoImage object
         image_photo = ImageTk.PhotoImage(image_pil)
-
+        uploaded_image=image_photo
         # Update label and add the image
         image_label.configure(image=image_photo)
         image_label.image = image_photo
 
         addPhoto.destroy()
+
 
 # Function for uploading new photo
 def browse_new_image(result_label, image_label, addPhoto):
@@ -342,7 +344,7 @@ def browse_new_image(result_label, image_label, addPhoto):
     # checking if the image is uploaded, if there is already an uploaded image, it will upload new image. Unless it will pass.
     if image_label.cget("image") and result_label.cget("image"):
         file_path = filedialog.askopenfilename(
-            filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png"), ("All files", "*.*")])
+            filetypes=[("All files", "*.*"),("JPEG files", "*.jpg"), ("PNG files", "*.png")])
 
         if file_path:
 
@@ -355,7 +357,7 @@ def browse_new_image(result_label, image_label, addPhoto):
             image_pil = Image.fromarray(rgbimage)
 
             # Resize image if necessary
-            max_size = 500
+            max_size = 300
             if max(image_pil.size) > max_size:
                 image_pil.thumbnail((max_size, max_size))
 
@@ -375,25 +377,25 @@ def browse_new_image(result_label, image_label, addPhoto):
 
 def create_before_image_frame(currentFrame, result_label):
     # Before Image Frame
-    imageFrame = CTkFrame(currentFrame, width=680, height=470,
+    imageFrame = CTkFrame(currentFrame, width=500, height=370,
                           bg_color="#121212", border_width=0.6, border_color="#00BB6D")
-    imageFrame.place(x=39, y=120)
+    imageFrame.place(x=231, y=120)
 
     # Before Image Label
-    image_label = CTkLabel(imageFrame, text="", width=600,
-                           height=400, justify="center")
-    image_label.place(x=38, y=32)
+    image_label = CTkLabel(imageFrame, text="", width=250,
+                           height=300)
+    image_label.place(x=150, y=32)
 
     # To show Browse Your Image button and after User uploaded the button will destory and the image will show in the imagelabel.
     addPhoto = CTkButton(image_label, text="Browse Your Image ", font=("Poppins", 16), image=uploadIcon,
                          fg_color="transparent", hover_color="null", compound="top", anchor="end", text_color="#EDEADE",
                          corner_radius=32, command=lambda: addImage(image_label, addPhoto))
-    addPhoto.place(x=208, y=166)
+    addPhoto.place(x=10, y=100)
 
     # For adding new images
     browse_new = CTkButton(currentFrame, text="Select new image", image=plusicon, compound="right", text_color="#00BB6D", font=(
         "Poppins", 15), hover_color="null", bg_color="transparent", fg_color="transparent", command=lambda: browse_new_image(result_label, image_label, addPhoto))
-    browse_new.place(x=36, y=600)
+    browse_new.place(x=220, y=490)
 
 
 def main():
@@ -407,7 +409,7 @@ def main():
                                      root.winfo_screenheight()))
     set_appearance_mode("dark")
     set_default_color_theme("green")
-    root.resizable(width=FALSE, height=FALSE)
+    root.resizable(width=TRUE, height=TRUE)
 
    
     huffmanFrame = CTkFrame(root, fg_color="transparent")
@@ -423,17 +425,17 @@ def main():
 
     # Image to Cartoon Button
     huffmanBtn = CTkButton(root, text="Huffman Coding", font=("Poppins", 14), border_color="#00BB6D", border_width=1,
-                          fg_color=active_btn_color, corner_radius=32,
+                          fg_color=active_btn_color, corner_radius=32,height=40,
                           hover_color="null",
                           command=lambda: on_tab_click(sectionframes, sectionbuttons, huffmanFrame, huffmanBtn))
-    huffmanBtn.place(x=550, y=45)
+    huffmanBtn.place(x=600, y=45)
 
     # Image to Text Button
     RLEBtn = CTkButton(root, text="Run Length Encoding", font=("Poppins", 14), border_color="#00BB6D", border_width=1,
-                           fg_color="transparent",
+                           fg_color="transparent",height=40,
                            hover_color="null", corner_radius=32,
                            command=lambda: on_tab_click(sectionframes, sectionbuttons, RLEFrame, RLEBtn))
-    RLEBtn.place(x=700, y=45)
+    RLEBtn.place(x=780, y=45)
 
     # setting all to tab buttons into the list for on tab click function
     sectionbuttons = [huffmanBtn, RLEBtn]

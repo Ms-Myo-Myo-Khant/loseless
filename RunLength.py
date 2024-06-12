@@ -21,7 +21,7 @@ def rle_decode(encoded_pixels, shape):
     return np.array(decoded_pixels).reshape(shape)
 
 def compress_RLE(uploaded_image):
-    # Convert the uploaded image to a NumPy array
+    # Convert the uploaded image to a NumPy array  
     img_array = np.array(uploaded_image)
 
     # Get the original size in bytes

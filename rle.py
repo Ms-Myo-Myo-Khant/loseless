@@ -71,5 +71,5 @@ compressed_panel.pack()
 
 info_label = tk.Label(app, text="")
 info_label.pack()
-
+app.mainloop()
 
