@@ -1,6 +1,3 @@
-import numpy as np
-from PIL import Image
-
 def rle_encode(img_array):
     pixels = img_array.flatten()
     encoded_pixels = []
@@ -20,10 +17,7 @@ def rle_decode(encoded_pixels, shape):
         decoded_pixels.extend([value] * count)
     return np.array(decoded_pixels).reshape(shape)
 
-def compress_RLE(uploaded_image):
-    # Convert the uploaded image to a NumPy array  
-    img_array = np.array(uploaded_image)
-
+def compress_RLE(img_array):
     # Get the original size in bytes
     original_size = img_array.nbytes
     

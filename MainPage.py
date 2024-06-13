@@ -166,67 +166,79 @@ def generate_huffman(currentFrame, result_label, uploaded_image, resultText,orig
         # Destroy the resultText widget (optional)
         resultText.destroy()
 
-def generate_RLE(currentFrame, result_label, uploaded_image, resultText,originalSizeText,compressedSizeText,compressedSizeRatio):
-    # if user click generate button without uploading image, it will alert to choose image first.
+def generate_RLE(currentFrame, result_label, uploaded_image, resultText, originalSizeText, compressedSizeText, compressedSizeRatio):
+    global after_image  # Ensure this is updated globally
+
     if uploaded_image is None:
-        t = CTkToplevel(currentFrame)
-        t.title("Alert")
+        alert(currentFrame, "Sorry! Can't Compress!", "Please choose your image first.")
+        return
 
-        t.iconbitmap("Image/favicon.ico")
+    # Display loading indicator
+    loading_label = CTkLabel(currentFrame, text="Compressing, please wait...", font=("Poppins", 16), bg="#121212", fg="#00BB6D")
+    loading_label.place(x=100, y=200)
 
-        t.configure(bg="#121212")
-        t.transient([currentFrame])
+    # Create a thread for the compression to avoid freezing the UI
+    def compress_image():
+        global after_image
+        try:
+            # Convert the uploaded image to a NumPy array
+            img_array = np.array(uploaded_image)
 
-        width = 380
-        height = 220
-        x = t.winfo_screenwidth() // 2 - width // 2
-        y = t.winfo_screenheight() // 2 - height // 2
-        t.geometry(f"{width}x{height}+{x + 120}+{y}")
+            # Perform RLE compression
+            after_image, original_size, compressed_size = RunLength.compress_RLE(img_array)
+            compression_ratio = compressed_size / original_size
 
-        t.resizable(width=False, height=False)
+            # Resize image if necessary
+            max_size = 300
+            if max(after_image.size) > max_size:
+                after_image.thumbnail((max_size, max_size))
 
-        icon = CTkImage(Image.open("Image/sad.png"), size=(30, 30))
-        alertIcon = CTkLabel(t, image=icon, text="")
-        alertIcon.place(x=180, y=18)
+            # Convert the compressed image to a PhotoImage object
+            compressed_image_tk = ImageTk.PhotoImage(after_image)
 
-        alertLabel1 = CTkLabel(t, text="Sorry! Can't Compress!", font=("Poppins", 22), text_color="#00BB6D",
-                               bg_color="transparent")
-        alertLabel1.place(x=74, y=60)
-        alertLabel2 = CTkLabel(t, text="Please choose your image first.", font=("Poppins", 16),
-                               text_color="#777", bg_color="transparent")
-        alertLabel2.place(x=80, y=100)
+            # Update the result_label widget with the compressed image
+            result_label.configure(image=compressed_image_tk)
+            result_label.image = compressed_image_tk
 
-        closeButton = CTkButton(t, text="Ok", fg_color="transparent", font=("Poppins", 16), hover_color="null", border_color="#00BB6D",
-                                border_width=1, command=t.destroy)
-        closeButton.place(x=125, y=150)
-        t.mainloop()
+            # Update the resultText with compression details
+            originalSizeText.configure(text=f"Original Size: {original_size} bytes")
+            compressedSizeText.configure(text=f"Compressed Size: {compressed_size} bytes")
+            compressedSizeRatio.configure(text=f"Compression Ratio: {compression_ratio:.2f}")
 
-    else:
+        finally:
+            # Remove loading indicator
+            loading_label.destroy()
 
-        after_image, original_size, compressed_size = RunLength.compress_RLE(uploaded_image)
-       
-        compression_ratio = compressed_size / original_size
-
-        # Resize image if necessary
-        max_size = 300
-        if max(after_image.size) > max_size:
-            after_image.thumbnail((max_size, max_size))
-
-        # Convert the compressed image to a PhotoImage object
-        compressed_image_tk = ImageTk.PhotoImage(after_image)
-        
-        # Update the result_label widget with the compressed image
-        result_label.configure(image=compressed_image_tk)
-        result_label.image = compressed_image_tk
-
-        # Update the resultText with compression details
-        resultText.destroy()
-        
-        originalSizeText.configure(text=f"Original Size: {original_size}")
-        compressedSizeText.configure(text=f"Compressed Size: {compressed_size}")
-        compressedSizeRatio.configure(text=f"Compression Ratio: {compression_ratio}")
+    threading.Thread(target=compress_image).start()
 
 
+def alert(currentFrame, title, message):
+    t = CTkToplevel(currentFrame)
+    t.title("Alert")
+    t.iconbitmap("Image/favicon.ico")
+    t.configure(bg="#121212")
+    t.transient([currentFrame])
+
+    width = 380
+    height = 220
+    x = t.winfo_screenwidth() // 2 - width // 2
+    y = t.winfo_screenheight() // 2 - height // 2
+    t.geometry(f"{width}x{height}+{x + 120}+{y}")
+
+    t.resizable(width=False, height=False)
+    icon = CTkImage(Image.open("Image/sad.png"), size=(30, 30))
+    alertIcon = CTkLabel(t, image=icon, text="")
+    alertIcon.place(x=180, y=18)
+
+    alertLabel1 = CTkLabel(t, text=title, font=("Poppins", 22), text_color="#00BB6D", bg_color="transparent")
+    alertLabel1.place(x=74, y=60)
+    alertLabel2 = CTkLabel(t, text=message, font=("Poppins", 16), text_color="#777", bg_color="transparent")
+    alertLabel2.place(x=80, y=100)
+
+    closeButton = CTkButton(t, text="Ok", fg_color="transparent", font=("Poppins", 16), hover_color="null",
+                            border_color="#00BB6D", border_width=1, command=t.destroy)
+    closeButton.place(x=125, y=150)
+    t.mainloop()
 
 
 # Function for downloading the after image
